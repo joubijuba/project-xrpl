@@ -1,6 +1,6 @@
 {
   "contractName": "SubmissionsStorage",
-  "abi": [
+   "abi": [
     {
       "inputs": [],
       "stateMutability": "nonpayable",

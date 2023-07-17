@@ -1,1 +1,0 @@
-import { web3 } from "./clients/Web3Client";
