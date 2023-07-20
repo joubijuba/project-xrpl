@@ -16,10 +16,10 @@ export default class Web3Service {
     erc20Address: string
   ): Promise<string> {
     try {
-      const { account, contract } = this.web3variables;
+      const { ownerAcc, contract } = this.web3variables;
       const request = await contract.methods
         .postNewSubmission(encryptedData, erc20Address)
-        .send({ from: account });
+        .send({ from: ownerAcc });
       if (request.status) {
         return "posted new subscription successfully";
       }

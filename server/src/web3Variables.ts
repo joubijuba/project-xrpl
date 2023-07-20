@@ -2,15 +2,15 @@ import Contract from "web3/eth/contract";
 import { web3 } from "./clients/Web3Client";
 import artifact from "./contracts/SubmissionsStorage.json";
 
-let account: string;
+let ownerAcc: string;
 let contract: Contract;
 
 export const getWeb3Variables = async () => {
-  if (account! || contract!) {
+  if (ownerAcc! || contract!) {
     const { abi } = artifact;
     if (artifact) {
       try {
-        account = (await web3.eth.requestAccounts())[0];
+        ownerAcc = (await web3.eth.requestAccounts())[0];
         let contractAddress: string;
         // 144002 : XRPL sidechain chain ID
         contractAddress = artifact.networks["1440002"].address;
@@ -22,5 +22,5 @@ export const getWeb3Variables = async () => {
       }
     }
   }
-  return { account, contract };
+  return { ownerAcc, contract };
 };
