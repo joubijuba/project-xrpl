@@ -18,10 +18,11 @@ export default class UsersController {
     );
   }
 
-  async processNewSubscription(req: Request, res: Response) {
+  async processNewSubscription(req: Request, res: Response): Promise<Response> {
     try {
       const datas = req.body
-      this.usersService.processNewSubscription(datas);
+      const response = await this.usersService.processNewSubscription(datas);
+      return res.status(200).json(response);
     } catch (err: any) {
       return res.status(400).json({
         error: err.toString(),

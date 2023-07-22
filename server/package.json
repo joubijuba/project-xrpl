@@ -22,5 +22,11 @@
   "devDependencies": {
     "@types/node": "^20.4.2",
     "typescript": "^5.1.6"
+  },
+  "prettier": {
+    "tabWidth": 2,
+    "printWidth": 100,
+    "semi": false,
+    "singleQuote": false
   }
 }

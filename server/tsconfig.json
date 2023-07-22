@@ -8,11 +8,11 @@
     "allowJs": true,
     "outDir": "build",
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true, 
-    "strict": true,                                    
-    "noImplicitAny": true,                               
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitAny": true,
     "skipLibCheck": true,
-    "baseUrl": ".",                    
+    "baseUrl": "."
   },
   "test-node": {
     "esm": true,
