@@ -1,9 +1,9 @@
-import express from "express"
+import express, { Express } from "express"
 import cors from 'cors';
 
-let expressServer: any;
+let expressServer: Express;
 
-export const getServer = () => {
+export const getServer = (): Express => {
   if (!expressServer){
     expressServer = express();
     expressServer.set("case sensitive routing", true)

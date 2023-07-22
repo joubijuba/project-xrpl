@@ -1,9 +1,7 @@
-import EncryptionController from "./controllers/EncryptionController";
-import { getServer } from "./bootServer";
+import UsersController from "./controllers/UsersController";
 
 const main = () => {
-  const expressServer = getServer();
-  const encryptionController = new EncryptionController(expressServer);
+  let usersController = new UsersController();
 }
 
 main()
