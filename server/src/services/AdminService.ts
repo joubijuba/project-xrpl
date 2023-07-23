@@ -14,6 +14,7 @@ export default class AdminService {
   async getPendingSubscriptions(): Promise<ResponseDto<WithId<Document>[]>> {
     try {
       const records = await this.collection.find({ status: "UNPROCESSED" }).toArray()
+      console.log(records)
       return ResponseDto.SuccessResponse("SUCCESSFUL REQUEST", records)
     } catch (e: any) {
       return e
