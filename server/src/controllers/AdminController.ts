@@ -1,6 +1,6 @@
 import { getServer } from "../getServer"
 import { Express, Request, Response } from "express"
-import AdminService from "src/services/AdminService"
+import AdminService from "../services/AdminService"
 
 export default class UsersController {
   adminService: AdminService
@@ -31,8 +31,14 @@ export default class UsersController {
 
   async getPendingSubscriptions(req: Request, res: Response): Promise<Response> {
     try {
-      const datas = await this.adminService.getPendingSubscriptions()
-      return res.status(200).json(datas)
+      const response = await this.adminService.getPendingSubscriptions()
+      if (!response.error && response.status) {
+        return res.status(200).json(response)
+      }
+      if (response.error) {
+        return res.status(400).json({ error: response.status.toString() })
+      }
+      return res.status(200).json(response)
     } catch (err: any) {
       return res.status(400).json({
         error: err.toString(),
@@ -44,6 +50,12 @@ export default class UsersController {
     try {
       const datas = req.params
       const response = await this.adminService.processSubscription(datas.mailAddress)
+      if (!response.error && response.status) {
+        return res.status(200).json(response)
+      }
+      if (response.error) {
+        return res.status(400).json({ error: response.status.toString() })
+      }
       return res.status(200).json(response)
     } catch (err: any) {
       return res.status(400).json({

@@ -11,12 +11,12 @@ export const getServer = (): Express => {
 
     /// ::: MIDDLEWARES ::: ///
     expressServer.use(cors({
-      origin:["*"]
+      origin:["http://localhost:3000"]
     }))
     expressServer.use(bodyParser.json())
 
-    expressServer.listen(3000, () => {
-      console.log("Express server running on port 3000")
+    expressServer.listen(8080, () => {
+      console.log("Express server running on port 8080")
     })
   }
   return expressServer;

@@ -19,6 +19,12 @@ export default class UsersController {
     try {
       const datas = req.body
       const response = await this.usersService.addNewSubscription(datas)
+      if (!response.error && response.status) {
+        return res.status(200).json(response)
+      }
+      if (response.error) {
+        return res.status(400).json({ error: response.status.toString() })
+      }
       return res.status(200).json(response)
     } catch (err: any) {
       return res.status(400).json({
