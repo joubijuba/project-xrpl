@@ -10,6 +10,10 @@ export default class UsersController {
     this.adminService = new AdminService()
     this.expressServer = getServer()
 
+    this.expressServer.get("admin/pendingSubscriptions", async (req: Request, res: Response) => {
+      await this.getPendingSubscriptions(req, res)
+    })
+
     this.expressServer.put(
       "admin/updateSubscription/mailAddress/:mailAddress",
       async (req: Request, res: Response) => {
@@ -27,7 +31,7 @@ export default class UsersController {
 
   async getPendingSubscriptions(req: Request, res: Response): Promise<Response> {
     try {
-      const datas = await this.adminService.getPendingSubscriptions();
+      const datas = await this.adminService.getPendingSubscriptions()
       return res.status(200).json(datas)
     } catch (err: any) {
       return res.status(400).json({
