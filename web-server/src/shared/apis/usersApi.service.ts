@@ -1,7 +1,7 @@
 import { SubscriptionDataDto } from "../models/dtos";
 import { BaseApi } from "./base-api.service";
 
-export class usersApi extends BaseApi {
+export class UsersApi extends BaseApi {
 
   public async queryTest(
     subscriptionData : SubscriptionDataDto
@@ -9,3 +9,5 @@ export class usersApi extends BaseApi {
     return this.postReq('/newSubscription', subscriptionData);
   }
 }
+
+export const usersApi = new UsersApi();

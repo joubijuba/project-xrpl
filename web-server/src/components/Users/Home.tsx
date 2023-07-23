@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 
-function AdminInterface() {
+function Home() {
   const [isOwner, setIsOwner] = useState();
 
   const checkOwnerAddress = async () => {
@@ -11,7 +11,7 @@ function AdminInterface() {
     checkOwnerAddress();
   }, [checkOwnerAddress]);
 
-  return <React.Fragment>Welcome admin</React.Fragment>;
+  return <React.Fragment>Welcome user</React.Fragment>;
 }
 
-export default AdminInterface;
+export default Home;

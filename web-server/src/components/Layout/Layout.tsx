@@ -1,5 +1,5 @@
 import Navigation from "./Navigation"
-import classes from "Layout.module.css"
+import classes from "./Layout.module.css"
 import React from "react"
 
 function Layout(props: any) {

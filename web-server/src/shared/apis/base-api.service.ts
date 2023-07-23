@@ -32,6 +32,7 @@ export abstract class BaseApi {
     try {
       const { axiosInstance } = this;
       const res = await axiosInstance.put(url, params);
+      console.log(res)
       return res.data;
     } catch (err: any) {
       return err.message;

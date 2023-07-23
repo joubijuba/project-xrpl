@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 
-function UsersInterface() {
+function Invest() {
   const [isOwner, setIsOwner] = useState();
 
   const checkOwnerAddress = async () => {
@@ -11,7 +11,7 @@ function UsersInterface() {
     checkOwnerAddress();
   }, [checkOwnerAddress]);
 
-  return <React.Fragment>Welcome admin</React.Fragment>;
+  return <React.Fragment>Investing page</React.Fragment>;
 }
 
-export default UsersInterface;
+export default Invest;
