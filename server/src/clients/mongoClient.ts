@@ -1,9 +1,10 @@
-import { MongoClient, ServerApiVersion } from "mongodb";
+import { MongoClient, ServerApiVersion } from "mongodb"
 
-require("dotenv").config();
+require("dotenv").config()
 
-const { MONGODB_DB_URL, MONGODB_USERNAME, MONGODB_PASSWORD } = process.env;
-const uri: string = `mongodb+srv://${MONGODB_USERNAME}:<${MONGODB_PASSWORD}>${MONGODB_DB_URL}/?retryWrites=true&w=majority`;
+const { MONGO_DB_URL, MONGO_USERNAME, MONGO_PASSWORD } = process.env
+const uri: string = `mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_DB_URL}/?retryWrites=true&w=majority`
+console.log(uri)
 
 export const mongoClient = new MongoClient(uri, {
   serverApi: {
@@ -11,4 +12,4 @@ export const mongoClient = new MongoClient(uri, {
     strict: true,
     deprecationErrors: true,
   },
-});
+})

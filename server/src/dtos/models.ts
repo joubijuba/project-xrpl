@@ -4,4 +4,5 @@ export interface SubscriptionDataDto {
   name: string;
   kbis: string;
   description: string;
+  status: string;
 }
