@@ -20,7 +20,6 @@ function NewApplication() {
     values
   ) => {
     const req = await usersApi.queryTest(values)
-    console.log(req);
   };
 
   return (

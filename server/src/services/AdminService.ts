@@ -16,8 +16,8 @@ export default class AdminService {
       const records = await this.collection.find({ status: "UNPROCESSED" }).toArray()
       console.log(records)
       return ResponseDto.SuccessResponse("SUCCESSFUL REQUEST", records)
-    } catch (e: any) {
-      return e
+    } catch (err: any) {
+      return ResponseDto.ErrorResponse(`ERROR : ${err.toString()}`)
     }
   }
 
@@ -32,11 +32,11 @@ export default class AdminService {
         { $set: { status: "PROCESSED" } }
       )
       if (updatedRecord) {
-        return ResponseDto.SuccessResponse("UPDATE : ITEM UPDATED WITH SUCCESS")
+        return ResponseDto.SuccessResponse("ITEM UPDATED WITH SUCCESS")
       }
       return ResponseDto.ErrorResponse("ERROR : SOMETHING WENT WRONG")
     } catch (err: any) {
-      return err
+      return ResponseDto.ErrorResponse(`ERROR : ${err.toString()}`)
     }
   }
 
@@ -48,11 +48,11 @@ export default class AdminService {
       }
       const deletedRecord = await this.collection.deleteOne({ mailAddress })
       if (deletedRecord) {
-        return ResponseDto.SuccessResponse("DELETE : ITEM DELETED WITH SUCCESS", mailAddress)
+        return ResponseDto.SuccessResponse("ITEM DELETED WITH SUCCESS", mailAddress)
       }
       return ResponseDto.ErrorResponse("ERROR : SOMETHING WENT WRONG")
     } catch (err: any) {
-      return err
+      return ResponseDto.ErrorResponse(`ERROR : ${err.toString()}`)
     }
   }
 }

@@ -1,4 +1,6 @@
+import { ResponseDto } from "../models/ResponseDto";
 import { getAxiosInstance } from "./axios/axios";
+// import { ResponseDto } from "../models/ResponseDto"
 import { AxiosError, AxiosInstance, AxiosResponse } from "axios";
 
 export abstract class BaseApi {
@@ -8,44 +10,43 @@ export abstract class BaseApi {
     this.axiosInstance = getAxiosInstance();
   }
 
-  async getReq<R = any>(url: string, config?: any): Promise<R> {
+  async getReq<R = any>(url: string, config?: any): Promise<ResponseDto<R>> {
     try {
       const { axiosInstance } = this;
       const res = await axiosInstance.get(url, config);
       return res.data;
     } catch (err: any) {
-      return err.message;
+      return err.response.data;
     }
   }
 
-  async postReq<R = any>(url: string, params?: any): Promise<R> {
+  async postReq<R = any>(url: string, params?: any): Promise<ResponseDto<R>> {
     try {
       const { axiosInstance } = this;
       const res = await axiosInstance.post(url, params);
       return res.data;
     } catch (err: any) {
-      return err.message;
+      return err.response.data;
     }
   }
 
-  async putReq<R = any>(url: string, params?: any): Promise<R> {
+  async putReq<R = any>(url: string, params?: any): Promise<ResponseDto<R>> {
     try {
       const { axiosInstance } = this;
       const res = await axiosInstance.put(url, params);
-      console.log(res)
       return res.data;
     } catch (err: any) {
-      return err.message;
+      return err.response.data;
     }
   }
 
-  async deleteReq<R = any>(url: string, params?: any): Promise<R> {
+  async deleteReq<R = any>(url: string, params?: any): Promise<ResponseDto<R>> {
     try {
       const { axiosInstance } = this;
       const res = await axiosInstance.delete(url, params);
       return res.data;
     } catch (err: any) {
-      return err.message;
+      return err.response.data;
     }
   }
 }

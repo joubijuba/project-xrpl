@@ -12,7 +12,8 @@ export default class UsersService {
     this.collection = this.mongoClient.db("mobirent").collection("subscription")
   }
 
-  async addNewSubscription(datas: Omit<SubscriptionDataDto, "status">): Promise<ResponseDto<string>> {
+  async addNewSubscription(datas: Omit<SubscriptionDataDto, "status">): Promise<ResponseDto<any>> {
+    console.log("received")
     try {
       const exists =
         await this.collection.find({ mailAddress: datas.mailAddress }).toArray() ??
@@ -25,12 +26,12 @@ export default class UsersService {
         status: "UNPROCESSED",
       }
       const res = await this.collection.insertOne(newRecord)
-      if (res) {
-        return ResponseDto.SuccessResponse("SUBSCRIPTION ADDED WITH SUCCESS")
+      if (res.acknowledged) {
+        return ResponseDto.SuccessResponse("SUBSCRIPTION ADDED WITH SUCCESS", "hahahaha")
       }
       return ResponseDto.ErrorResponse("ERROR : SOMETHING WENT WRONG");
     } catch (err: any) {
-      return err
+      return ResponseDto.ErrorResponse(`ERROR : ${err.toString()}`);
     }
   }
 }
