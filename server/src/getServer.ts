@@ -1,6 +1,7 @@
 import express, { Express } from "express"
 import cors from 'cors';
 import bodyParser from "body-parser"
+import fileUpload from 'express-fileupload';
 
 let expressServer: Express;
 
@@ -14,6 +15,7 @@ export const getServer = (): Express => {
       origin:["http://localhost:3000"]
     }))
     expressServer.use(bodyParser.json())
+    expressServer.use(fileUpload());
 
     expressServer.listen(8080, () => {
       console.log("Express server running on port 8080")

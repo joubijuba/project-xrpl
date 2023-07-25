@@ -55,4 +55,5 @@ export default class AdminService {
       return ResponseDto.ErrorResponse(`ERROR : ${err.toString()}`)
     }
   }
+
 }
