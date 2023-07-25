@@ -1,4 +1,4 @@
-import { getClient } from "../xrpl-client"
+import { getClient } from "../xrpl-clients"
 import {
   NFTokenMint,
   convertStringToHex,
@@ -13,12 +13,12 @@ import { autofill } from "xrpl/dist/npm/sugar"
 const client = getClient()
 
 type MintNftProps = Omit<NFTokenMint, "TransactionType" | "Account" | "Flags">
-
 export const mintNft = async (
   { URI, NFTokenTaxon = 0, ...rest }: MintNftProps,
   { wallet }: TxnOptions
 ) => {
   //Prepare
+
   const nftMintTxn: NFTokenMint = {
     ...rest,
     NFTokenTaxon: 0,

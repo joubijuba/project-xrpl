@@ -1,5 +1,5 @@
 import { TxnOptions } from "../models";
-import { getClient } from "../xrpl-client";
+import { getClient } from "../xrpl-clients";
 
 import { Payment } from "xrpl";
 
