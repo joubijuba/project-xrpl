@@ -6,7 +6,7 @@ export function _responseBuilder(response: ResponseDto<any>, res: Response): Res
   return res.status(!response.error ? 200 : 400).json(response)
 }
 
-export function _typeChecker(schema: z.Schema<any>) {
+export function _reqBodyChecker(schema: z.Schema<any>) {
   return (req: Request, res: Response, next: any) => {
     const body = req.body
     const isTypeOk = schema.safeParse(body)

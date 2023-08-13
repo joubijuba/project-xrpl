@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 /// Zod schema
-export const SuscriptionDataSchema = z.object({
+export const ApplicationDataSchema = z.object({
   mailAddress: z.string().email(),
   phoneNumber: z.string().length(10),
   name: z.string().min(2),
@@ -10,4 +10,4 @@ export const SuscriptionDataSchema = z.object({
   status: z.string(),
 })
 
-export type SubscriptionDataDto = z.infer<typeof SuscriptionDataSchema>
+export type ApplicationDataDto = z.infer<typeof ApplicationDataSchema>

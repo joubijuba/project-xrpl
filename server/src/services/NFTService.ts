@@ -23,12 +23,12 @@ import {
 /* SERVICE CONTAINING ALL NFT LOGIC */
 
 export default class NFTService {
-  async saveFileIntoDir(uploadedImage: UploadedFile) {
+  private async saveFileIntoDir(uploadedImage: UploadedFile) {
     const imageFilePath = "../assets/generated_nft.jpg"
     await fs.promises.writeFile(imageFilePath, uploadedImage.data)
   }
 
-  async pinToIPFS(): Promise<string> {
+  private async pinToIPFS(): Promise<string> {
     const readableStreamForFile = fs.createReadStream("../assets/generated_nft.jpg")
     const options: PinataPinOptions = {
       pinataMetadata: {

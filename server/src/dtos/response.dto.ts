@@ -1,21 +1,21 @@
 export class ResponseDto<R> {
   data?: R
-  status: string
+  status?: string
   error: boolean
 
-  constructor(status: string, error: boolean) {
+  constructor(error: boolean, status?: string, ) {
     this.status = status;
     this.error = error;
   }
 
   static ErrorResponse <R>(status: string): ResponseDto<R> {
     return new ResponseDto(
-      status, true
+      true, status
     )
   }
 
-  static SuccessResponse <R>(status : string, data?: R): ResponseDto<R> {
-    const response = new ResponseDto(status, false)
+  static SuccessResponse <R>(status? : string, data?: R): ResponseDto<R> {
+    const response = new ResponseDto(false, status)
     if (data){
       response.data = data;
     }

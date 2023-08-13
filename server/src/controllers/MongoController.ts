@@ -1,8 +1,8 @@
 import { getServer } from "../getServer"
 import { Express, Request, Response } from "express"
 import MongoService from "../services/MongoService"
-import { _responseBuilder, _typeChecker } from "../utils/express.utils"
-import { SubscriptionDataDto, SuscriptionDataSchema } from "../dtos/mongo-models.dto"
+import { _responseBuilder, _reqBodyChecker } from "../utils/express.utils"
+import { ApplicationDataDto, ApplicationDataSchema } from "../dtos/mongo-models.dto"
 import { ResponseDto } from "../dtos/response.dto"
 
 export default class MongoController {
@@ -14,49 +14,41 @@ export default class MongoController {
     this.expressServer = getServer()
 
     this.expressServer.post(
-      "/newSubscription",
-      _typeChecker(SuscriptionDataSchema.omit({ status: true })),
+      "/newApplication",
+      _reqBodyChecker(ApplicationDataSchema.omit({ status: true })),
       async (req: Request, res: Response) => {
-        await this.addNewSubscription(req, res)
+        const response = await this.mongoService.addNewApplication(req.body)
+        return _responseBuilder(response, res)
       }
     )
 
-    this.expressServer.get("admin/pendingSubscriptions", async (req: Request, res: Response) => {
-      await this.getPendingSubscriptions(req, res)
+    this.expressServer.get("/admin/pendingApplications", async (req: Request, res: Response) => {
+      const response = await this.mongoService.getPendingApplications()
+      return _responseBuilder(response, res)
     })
 
     this.expressServer.put(
-      "admin/updateSubscription/mailAddress/:mailAddress",
+      "/admin/updateApplication/mailAddress/:mailAddress",
       async (req: Request, res: Response) => {
-        await this.processSubscription(req, res)
+        const response = await this.mongoService.processApplication(req.params.mailAddress)
+        return _responseBuilder(response, res)
+      }
+    )
+
+    this.expressServer.get(
+      "/admin/getApplication/mailAddress/:mailAddress",
+      async (req: Request, res: Response) => {
+        const response = await this.mongoService.getApplication(req.params.mailAddress)
+        return _responseBuilder(response, res)
       }
     )
 
     this.expressServer.delete(
-      "admin/updateSubscription/mailAddress/:mailAddress",
+      "/admin/deleteApplication/mailAddress/:mailAddress",
       async (req: Request, res: Response) => {
-        await this.processSubscription(req, res)
+        const response = await this.mongoService.deleteApplication(req.params.mailAddress)
+        return _responseBuilder(response, res)
       }
     )
-  }
-
-  async addNewSubscription(req: Request, res: Response): Promise<Response> {
-    const response = await this.mongoService.addNewSubscription(req.body)
-    return _responseBuilder(response, res)
-  }
-
-  async getPendingSubscriptions(req: Request, res: Response): Promise<Response> {
-    const response = await this.mongoService.getPendingSubscriptions()
-    return _responseBuilder(response, res)
-  }
-
-  async processSubscription(req: Request, res: Response): Promise<Response> {
-    const response = await this.mongoService.processSubscription(req.params.mailAddress)
-    return _responseBuilder(response, res)
-  }
-
-  async deleteSubscription(req: Request, res: Response): Promise<Response> {
-    const response = await this.mongoService.deleteSubscription(req.params.mailAddress)
-    return _responseBuilder(response, res)
   }
 }
