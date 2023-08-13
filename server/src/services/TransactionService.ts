@@ -26,7 +26,7 @@ export default class TransactionService {
     try {
       //Prepare the transaction JSON
       const accountset: AccountSet = {
-        ...props,
+        
         TransactionType: "AccountSet",
         Account: WALLET_2.address,
         TransferRate: 0,
