@@ -40,6 +40,7 @@ export default class NFTService {
   }
 
   private async pinToIPFS(NFTDatas: NFTDatasDto): Promise<ResponseDto<string>> {
+    const ipfsGatewayUrl: string = "https://ipfs.io/ipfs/"
     const { companyName, KBIS, minimumProfit, nftImage } = NFTDatas
     const options: PinataPinOptions = {
       pinataMetadata: {
@@ -57,17 +58,17 @@ export default class NFTService {
       const result = await pinataClient.pinFileToIPFS(savedFileRes.data, options)
       const jsonResult = await pinataClient.pinJSONToIPFS(
         {
-          description: "Mobirent hybrid Fleet 001 NFT",
+          // description: "Mobirent hybrid Fleet 001 NFT",
           image: result.IpfsHash,
-          name: "MBR_Hybrid_001_NFT",
+          // name: "MBR_Hybrid_001_NFT",
           companyName,
           KBIS,
           minimumProfit,
         },
         options
       )
-      console.log(jsonResult.IpfsHash)
-      return ResponseDto.SuccessResponse(jsonResult.IpfsHash) /// Must return exact ipfs URL to be used as parameter in mintNFT
+      const ipfsURI = ipfsGatewayUrl + jsonResult.IpfsHash
+      return ResponseDto.SuccessResponse(undefined, ipfsURI) /// Must return exact ipfs URL to be used as parameter in mintNFT
     } catch (error: any) {
       return ResponseDto.ErrorResponse(error.toString())
     }
@@ -76,10 +77,12 @@ export default class NFTService {
   async mintNFT(NFTDatas: NFTDatasDto): Promise<ResponseDto<string>> {
     try {
       const pinFileRes = await this.pinToIPFS(NFTDatas)
+
       // error handling, if pinata is sending an error
       if (pinFileRes.error) {
         return pinFileRes
       }
+  
       const nftMintTxn: NFTokenMint = {
         NFTokenTaxon: 0,
         Flags: NFTokenMintFlags.tfTransferable,
@@ -87,15 +90,14 @@ export default class NFTService {
         Account: WALLET_1.address,
         TransactionType: "NFTokenMint",
       }
+
+      await xrplClient.connect()
       const prepared = await xrplClient.autofill(nftMintTxn)
-
-      //Sign
       const signed = WALLET_1.sign(prepared)
-
-      //Submit and wait
       const response = await xrplClient.submitAndWait(signed.tx_blob)
-      console.log(response.result.hash)
-      return ResponseDto.SuccessResponse(response.result.hash)
+      await xrplClient.disconnect()
+
+      return ResponseDto.SuccessResponse(`SUCCESSFULLY MINTED ${response.result.hash}`)
     } catch (err: any) {
       return ResponseDto.ErrorResponse(err.toString())
     }

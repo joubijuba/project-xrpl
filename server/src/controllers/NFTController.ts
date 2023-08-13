@@ -30,8 +30,4 @@ export default class NFTController {
     )
   }
 
-  // async addNewSubscription(req: Request, res: Response): Promise<Response> {
-  //   const response = await this.NFTService.mintNFT(req.body)
-  //   return _responseBuilder(response, res)
-  // }
 }
