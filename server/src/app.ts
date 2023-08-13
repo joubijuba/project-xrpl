@@ -1,9 +1,7 @@
-import AdminController from "./controllers/AdminController";
-import UsersController from "./controllers/UsersController";
+import MongoController from "./controllers/MongoController"
 
 const main = () => {
-  let usersController = new UsersController();
-  let adminController = new AdminController()
+  let mongoController = new MongoController()
 }
 
 main()

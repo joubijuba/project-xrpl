@@ -1,21 +1,9 @@
-import {
-  AccountSet,
-  Client,
-  Payment,
-} from "xrpl"
-import { getClient } from "../clients/xrplClient"
-import { AccountProps, PaymentProps } from "src/dtos/models"
-import { TxnOptions } from "src/dtos/txn-options"
-
+import { AccountSet, Client, Payment } from "xrpl"
+import { xrplClient } from "../utils/clients"
+import { AccountProps, PaymentProps, TxnOptions } from "../dtos/xrpl-models.dto"
 /* SERVICE CONTAINING ALL TRANSACTION LOGIC */
 
-export class TransactionService {
-  xrplClient: Client
-
-  constructor() {
-    this.xrplClient = getClient()
-  }
-
+export default class TransactionService {
   async simpleTransfer(props: PaymentProps, { wallet }: TxnOptions) {
     //Prepare the transaction JSON
     const payment: Payment = {
@@ -23,13 +11,13 @@ export class TransactionService {
       TransactionType: "Payment",
       Account: wallet.address,
     }
-    const prepared = await this.xrplClient.autofill(payment)
+    const prepared = await xrplClient.autofill(payment)
 
     //Sign
     const signed = wallet.sign(prepared)
 
     //Submit and wait for validation
-    const response = await this.xrplClient.submitAndWait(signed.tx_blob)
+    const response = await xrplClient.submitAndWait(signed.tx_blob)
   }
 
   async setIssuerAccount(props: AccountProps, { wallet }: TxnOptions) {
@@ -43,12 +31,12 @@ export class TransactionService {
       Domain: "6578616D706C652E636F6D", // "example.com"
       //SetFlag: xrpl.AccountSetAsfFlags.asfDefaultRipple,
     }
-    const prepared = await this.xrplClient.autofill(accountset)
+    const prepared = await xrplClient.autofill(accountset)
 
     //Sign
     const signed = wallet.sign(prepared)
 
     //Submit and wait for validation
-    const response = await this.xrplClient.submitAndWait(signed.tx_blob)
+    const response = await xrplClient.submitAndWait(signed.tx_blob)
   }
 }

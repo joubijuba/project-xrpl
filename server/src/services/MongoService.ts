@@ -1,14 +1,35 @@
-import { Collection, Db, Document, InsertOneResult, MongoClient, WithId } from "mongodb"
-import { mongoClient } from "../clients/mongoClient"
-import { ResponseDto } from "../dtos/ResponseDto"
+import { Collection, Document, WithId } from "mongodb"
+import { mongoClient } from "../utils/clients"
+import { ResponseDto } from "../dtos/response.dto"
+import { SubscriptionDataDto } from "../dtos/mongo-models.dto"
 
-export default class AdminService {
-  mongoClient: MongoClient
+export default class MongoService {
   collection: Collection
 
   constructor() {
-    this.mongoClient = mongoClient
-    this.collection = this.mongoClient.db("mobirent").collection("subscription")
+    this.collection = mongoClient.db("mobirent").collection("subscription")
+  }
+
+  async addNewSubscription(datas: Omit<SubscriptionDataDto, "status">): Promise<ResponseDto<any>> {
+    try {
+      const exists =
+        (await this.collection.find({ mailAddress: datas.mailAddress }).toArray()) ??
+        (await this.collection.find({ phoneNumber: datas.phoneNumber }).toArray())
+      if (exists.length !== 0) {
+        return ResponseDto.ErrorResponse("ERROR : USER ALREADY EXISTS")
+      }
+      const newRecord: SubscriptionDataDto = {
+        ...datas,
+        status: "UNPROCESSED",
+      }
+      const res = await this.collection.insertOne(newRecord)
+      if (res.acknowledged) {
+        return ResponseDto.SuccessResponse("SUBSCRIPTION ADDED WITH SUCCESS")
+      }
+      return ResponseDto.ErrorResponse("ERROR : SOMETHING WENT WRONG")
+    } catch (err: any) {
+      return ResponseDto.ErrorResponse(`ERROR : ${err.toString()}`)
+    }
   }
 
   async getPendingSubscriptions(): Promise<ResponseDto<WithId<Document>[]>> {
@@ -55,5 +76,4 @@ export default class AdminService {
       return ResponseDto.ErrorResponse(`ERROR : ${err.toString()}`)
     }
   }
-
 }

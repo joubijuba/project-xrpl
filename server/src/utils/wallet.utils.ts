@@ -10,5 +10,3 @@ const WALLET_2_SEED = process.env.WALLET_2_SEED ?? ""
 
 export const WALLET_1 = Wallet.fromSeed(WALLET_1_SEED)
 export const WALLET_2 = Wallet.fromSeed(WALLET_2_SEED)
-
-console.log(WALLET_1)
