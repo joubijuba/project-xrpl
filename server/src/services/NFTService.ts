@@ -4,8 +4,6 @@ import {
   NFTokenCreateOffer,
   NFTokenMint,
   NFTokenMintFlags,
-  Transaction,
-  TxResponse,
   convertStringToHex,
 } from "xrpl"
 import { PinataPinOptions } from "@pinata/sdk"
@@ -14,22 +12,35 @@ import { UploadedFile } from "express-fileupload"
 import fs from "fs"
 import {
   CreateNftOfferProps,
-  MintNftProps,
   NFTokenAcceptOfferprops,
   NFTokenBurnprops,
   TxnOptions,
 } from "../dtos/xrpl-models.dto"
+import path from "path"
+import { NFTDatasDto } from "../dtos/nft-models.dto"
+import { ResponseDto } from "../dtos/response.dto"
+import { WALLET_1 } from "../utils/wallet.utils"
 
 /* SERVICE CONTAINING ALL NFT LOGIC */
 
 export default class NFTService {
-  private async saveFileIntoDir(uploadedImage: UploadedFile) {
-    const imageFilePath = "../assets/generated_nft.jpg"
-    await fs.promises.writeFile(imageFilePath, uploadedImage.data)
+  imageFilePath: string
+
+  constructor() {
+    this.imageFilePath = path.resolve(__dirname, "../assets/generated_nft.jpg")
   }
 
-  private async pinToIPFS(): Promise<string> {
-    const readableStreamForFile = fs.createReadStream("../assets/generated_nft.jpg")
+  private async saveFileIntoDir(uploadedImage: UploadedFile): Promise<ResponseDto<any>> {
+    try {
+      await fs.promises.writeFile(this.imageFilePath, uploadedImage.data)
+      return ResponseDto.SuccessResponse(undefined, fs.createReadStream(this.imageFilePath))
+    } catch (err: any) {
+      return ResponseDto.ErrorResponse("Can't save or retrieve image to/from dir")
+    }
+  }
+
+  private async pinToIPFS(NFTDatas: NFTDatasDto): Promise<ResponseDto<string>> {
+    const { companyName, KBIS, minimumProfit, nftImage } = NFTDatas
     const options: PinataPinOptions = {
       pinataMetadata: {
         name: "MobirentNFT",
@@ -39,41 +50,55 @@ export default class NFTService {
       },
     }
     try {
-      const result = await pinataClient.pinFileToIPFS(readableStreamForFile, options)
-      const body = {
-        description: "Mobirent hybrid Fleet 001 NFT",
-        image: result.IpfsHash,
-        name: "MBR_Hybrid_001_NFT",
+      const savedFileRes = await this.saveFileIntoDir(NFTDatas.nftImage)
+      if (savedFileRes.error) {
+        return savedFileRes
       }
-      const jsonResult = await pinataClient.pinJSONToIPFS(body, options)
-      return result.IpfsHash /// Must return exact ipfs URL to be used as parameter in mintNFT
-    } catch (error) {
-      console.error("Erreur lors de l'envoi de l'image sur IPFS :", error)
-      throw error
+      const result = await pinataClient.pinFileToIPFS(savedFileRes.data, options)
+      const jsonResult = await pinataClient.pinJSONToIPFS(
+        {
+          description: "Mobirent hybrid Fleet 001 NFT",
+          image: result.IpfsHash,
+          name: "MBR_Hybrid_001_NFT",
+          companyName,
+          KBIS,
+          minimumProfit,
+        },
+        options
+      )
+      console.log(jsonResult.IpfsHash)
+      return ResponseDto.SuccessResponse(jsonResult.IpfsHash) /// Must return exact ipfs URL to be used as parameter in mintNFT
+    } catch (error: any) {
+      return ResponseDto.ErrorResponse(error.toString())
     }
   }
 
-  async mintNFT(
-    { URI, NFTokenTaxon = 0, ...rest }: MintNftProps,
-    { wallet }: TxnOptions
-  ): Promise<TxResponse<Transaction>> {
-    //Prepare
-    const nftMintTxn: NFTokenMint = {
-      ...rest,
-      NFTokenTaxon: 0,
-      Flags: NFTokenMintFlags.tfTransferable,
-      URI: convertStringToHex(URI ?? ""),
-      Account: wallet.address,
-      TransactionType: "NFTokenMint",
+  async mintNFT(NFTDatas: NFTDatasDto): Promise<ResponseDto<string>> {
+    try {
+      const pinFileRes = await this.pinToIPFS(NFTDatas)
+      // error handling, if pinata is sending an error
+      if (pinFileRes.error) {
+        return pinFileRes
+      }
+      const nftMintTxn: NFTokenMint = {
+        NFTokenTaxon: 0,
+        Flags: NFTokenMintFlags.tfTransferable,
+        URI: convertStringToHex(pinFileRes.data ?? ""),
+        Account: WALLET_1.address,
+        TransactionType: "NFTokenMint",
+      }
+      const prepared = await xrplClient.autofill(nftMintTxn)
+
+      //Sign
+      const signed = WALLET_1.sign(prepared)
+
+      //Submit and wait
+      const response = await xrplClient.submitAndWait(signed.tx_blob)
+      console.log(response.result.hash)
+      return ResponseDto.SuccessResponse(response.result.hash)
+    } catch (err: any) {
+      return ResponseDto.ErrorResponse(err.toString())
     }
-    const prepared = await xrplClient.autofill(nftMintTxn)
-
-    //Sign
-    const signed = wallet.sign(prepared)
-
-    //Submit and wait
-    const response = await xrplClient.submitAndWait(signed.tx_blob)
-    return response
   }
 
   async createNftOffer(props: CreateNftOfferProps, { wallet }: TxnOptions) {

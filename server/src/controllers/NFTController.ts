@@ -1,32 +1,37 @@
 import { getServer } from "../getServer"
 import { Express, Request, Response } from "express"
-import MongoService from "../services/MongoService"
 import { _responseBuilder, _reqBodyChecker } from "../utils/express.utils"
-import { ApplicationDataDto, ApplicationDataSchema } from "../dtos/mongo-models.dto"
+import NFTService from "../services/NFTService"
+import { NFTDatasDto, NFTDatasSchema } from "../dtos/nft-models.dto"
 import { ResponseDto } from "../dtos/response.dto"
-import NFTService from "src/services/NFTService"
+import fileUpload, { UploadedFile } from "express-fileupload"
 
 export default class NFTController {
-  NFTService: NFTService
+  nftService: NFTService
   expressServer: Express
 
   constructor() {
-    this.NFTService = new NFTService()
+    this.nftService = new NFTService()
     this.expressServer = getServer()
 
     this.expressServer.post(
       "/mintNFT",
-      _reqBodyChecker(ApplicationDataSchema.omit({ status: true })),
+      _reqBodyChecker(NFTDatasSchema),
       async (req: Request, res: Response) => {
-        // await this.addNewSubscription(req, res)
+        if (!req.files || !req.files.nftImage) {
+          return _responseBuilder(ResponseDto.ErrorResponse("No image uploaded"), res)
+        }
+        const nftDatas: NFTDatasDto = {
+          ...req.body,
+          nftImage: req.files.nftImage as UploadedFile,
+        }
+        return _responseBuilder(await this.nftService.mintNFT(nftDatas), res)
       }
     )
-
   }
 
   // async addNewSubscription(req: Request, res: Response): Promise<Response> {
   //   const response = await this.NFTService.mintNFT(req.body)
   //   return _responseBuilder(response, res)
   // }
-
 }
