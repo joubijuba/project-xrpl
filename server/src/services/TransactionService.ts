@@ -1,6 +1,13 @@
-import { AccountSet, Payment, TrustSet, TxResponse, Wallet } from "xrpl"
+import {
+  AccountSet,
+  AccountSetAsfFlags,
+  AccountSetTfFlags,
+  Payment,
+  TrustSet,
+  TxResponse,
+  Wallet,
+} from "xrpl"
 import { xrplClient, xummClient } from "../utils/clients"
-import { AccountProps, TxnOptions } from "../dtos/xrpl-models.dto"
 import { ResponseDto } from "../dtos/response.dto"
 import { WALLET_1, WALLET_2 } from "../utils/wallet.utils"
 import { BuyOrderDataDto, TokenMintDataDto } from "../dtos/transactions-models.dto"
@@ -21,16 +28,13 @@ export default class TransactionService {
    * @param wallet : the wallet signing the tx
    * @returns
    */
-  private async submitTx(tx: any, wallet: Wallet): Promise<TxResponse> {
-    xrplClient.connect()
+  private async _submitTx(tx: any, wallet: Wallet): Promise<TxResponse> {
     const prepared = await xrplClient.autofill(tx)
-    const signed = WALLET_2.sign(prepared)
-    const response = await xrplClient.submitAndWait(signed.tx_blob)
-    xrplClient.disconnect()
-    return response
+    const signed = wallet.sign(prepared)
+    return await xrplClient.submitAndWait(signed.tx_blob)
   }
 
-  async setIssuerAccount() {
+  private async _setIssuerAccount(): Promise<ResponseDto<string>> {
     try {
       const accountSet: AccountSet = {
         TransactionType: "AccountSet",
@@ -38,12 +42,14 @@ export default class TransactionService {
         TransferRate: 0,
         TickSize: 5,
         Domain: "6578616D706C652E636F6D", // "example.com"
-        //SetFlag: xrpl.AccountSetAsfFlags.asfDefaultRipple,
+        SetFlag: AccountSetAsfFlags.asfDefaultRipple,
+        Flags: AccountSetTfFlags.tfDisallowXRP | AccountSetTfFlags.tfRequireDestTag,
       }
 
-      const txResponse = await this.submitTx(accountSet, WALLET_2)
+      const txResponse = await this._submitTx(accountSet, WALLET_2)
 
       if (txResponse.result.validated) {
+        console.log("hahaha")
         return ResponseDto.SuccessResponse("SUCESSFULLY SET ISSUER ACCOUNT")
       }
 
@@ -53,7 +59,7 @@ export default class TransactionService {
     }
   }
 
-  async setHotWallet() {
+  private async _setHotWallet(): Promise<ResponseDto<string>> {
     try {
       const hot_settings_tx: AccountSet = {
         TransactionType: "AccountSet",
@@ -61,12 +67,14 @@ export default class TransactionService {
         TransferRate: 0,
         TickSize: 5,
         Domain: "6578616D706C652E636F6D", // "example.com"
-        //SetFlag: xrpl.AccountSetAsfFlags.asfDefaultRipple,
+        SetFlag: AccountSetAsfFlags.asfDefaultRipple,
+        Flags: AccountSetTfFlags.tfDisallowXRP | AccountSetTfFlags.tfRequireDestTag,
       }
 
-      const txResponse = await this.submitTx(hot_settings_tx, WALLET_1)
+      const txResponse = await this._submitTx(hot_settings_tx, WALLET_1)
 
       if (txResponse.result.validated) {
+        console.log("hahaha")
         return ResponseDto.SuccessResponse("SUCESSFULLY SET HOT WALLET")
       }
 
@@ -77,7 +85,7 @@ export default class TransactionService {
   }
 
   //Trustline from hot to cold address
-  async CreateTrustline(tokenMintData: TokenMintDataDto) {
+  private async _setTrustline(tokenMintData: TokenMintDataDto): Promise<ResponseDto<string>> {
     try {
       const trust_set_tx: TrustSet = {
         TransactionType: "TrustSet",
@@ -85,78 +93,145 @@ export default class TransactionService {
         LimitAmount: {
           currency: tokenMintData.tokenTicker,
           issuer: WALLET_2.address,
-          value: tokenMintData.tokenSupply, // Large limit, arbitrarily chosen
+          value: "10000000000",
         },
+        Flags: 2147483648,
       }
 
-      const txResponse = await this.submitTx(trust_set_tx, WALLET_1)
+      const txResponse = await this._submitTx(trust_set_tx, WALLET_1)
 
       if (txResponse.result.validated) {
-        return ResponseDto.SuccessResponse("SUCESSFULLY SET HOT WALLET")
+        console.log("hahaha")
+        return ResponseDto.SuccessResponse("SUCESSFULLY SET TRUST LINE")
       }
+
+      return ResponseDto.ErrorResponse("TX DIDNT GO THROUGHT")
+    } catch (err: any) {
+      return ResponseDto.ErrorResponse(err.toString())
+    }
+  }
+
+  private async _fromColdToHotWallet(
+    tokenMintData: TokenMintDataDto
+  ): Promise<ResponseDto<string>> {
+    try {
+      const send_token_tx: Payment = {
+        TransactionType: "Payment",
+        Account: WALLET_2.address,
+        Amount: {
+          currency: tokenMintData.tokenTicker,
+          value: tokenMintData.tokenSupply,
+          issuer: WALLET_2.address,
+        },
+        Destination: WALLET_1.address,
+        DestinationTag: 1,
+        Flags: 2147483648,
+      }
+
+      const txResponse = await this._submitTx(send_token_tx, WALLET_2)
+
+      if (txResponse.result.validated) {
+        console.log("hahaha")
+        return ResponseDto.SuccessResponse(
+          `You successfully minted ${tokenMintData.tokenSupply} ${tokenMintData.tokenTicker}`
+        )
+      }
+
+      return ResponseDto.ErrorResponse("TX DIDNT GO THROUGHT")
     } catch (err: any) {
       return ResponseDto.ErrorResponse(err.toString())
     }
   }
 
   async mintTokens(tokenMintData: TokenMintDataDto): Promise<ResponseDto<string>> {
-    /// TO DO : call the functions to mint the tokens
-    return ResponseDto.SuccessResponse("SUCCESSFLLY MINTED TOKENS")
+    await xrplClient.connect()
+
+    /// Need to make sequential requests as we need to strictly respect the below order
+    const res1 = await this._setIssuerAccount()
+    if (res1.error) {
+      return res1
+    }
+    const res2 = await this._setHotWallet()
+    if (res2.error) {
+      return res2
+    }
+    const res3 = await this._setTrustline(tokenMintData)
+    if (res3.error) {
+      return res3
+    }
+    const res = await this._fromColdToHotWallet(tokenMintData)
+
+    xrplClient.disconnect()
+
+    return res
   }
 
   private async sendXRPToPresaleWallet(
     buyOrderData: BuyOrderDataDto
   ): Promise<ResponseDto<string>> {
-    const request: any = {
-      txjson: {
-        TransactionType: "Payment",
-        Destination: WALLET_1.address,
-        Amount: buyOrderData.amountInXrp, // drops
-      },
-      user_token: buyOrderData.userToken,
-    }
-    await xummClient.ping()
-
-    // The callback function inside createAndSubscribe is ran asyncronously.
-    // It will keep running until either the inner timeout is over OR the user signs / declines the TX inside,
-    // it's watching this particular event (user signing / declining tx). Everytime that a "new event" is emitted
-    // on the XUMM server side, it triggers our callback function probably thanks to a w:s that is watching
-    // the event ?
-    const subscription = await xummClient.payload.createAndSubscribe(request, (event) => {
-      // The event data contains a property 'signed' (true or false)
-      if (Object.keys(event.data).indexOf("signed") > -1) {
-        return event.data
+    try {
+      const request: any = {
+        txjson: {
+          TransactionType: "Payment",
+          Destination: WALLET_1.address,
+          Amount: buyOrderData.amountInXrp, // drops
+        },
+        user_token: buyOrderData.userToken,
       }
-    })
-    const resolveData: any = await subscription.resolved /// Resolved promise
+      await xummClient.ping()
 
-    if (!resolveData.signed) {
-      return ResponseDto.ErrorResponse("TX hasn't been signed in the app")
+      // The callback function inside createAndSubscribe is ran asyncronously.
+      // It will keep running until either the inner timeout is over OR the user signs / declines the TX inside,
+      // it's watching this particular event (user signing / declining tx). Everytime that a "new event" is emitted
+      // on the XUMM server side, it triggers our callback function probably thanks to a w:s that is watching
+      // the event ?
+      const subscription = await xummClient.payload.createAndSubscribe(request, (event) => {
+        // The event data contains a property 'signed' (true or false)
+        if (Object.keys(event.data).indexOf("signed") > -1) {
+          return event.data
+        }
+      })
+      const resolveData: any = await subscription.resolved /// Resolved promise
+
+      // need to see if this corresponds to a successful tx or just a signed tx (successful or not)
+      if (!resolveData.signed) {
+        return ResponseDto.ErrorResponse("TX hasn't been signed in the app")
+      }
+
+      const result = await xummClient.payload.get(resolveData.payload_uuidv4)
+
+      return ResponseDto.SuccessResponse("Successfully bought tokens", result!.response.txid!)
+    } catch (err: any) {
+      return ResponseDto.ErrorResponse(err.toString())
     }
-
-    const result = await xummClient.payload.get(resolveData.payload_uuidv4)
-
-    return ResponseDto.SuccessResponse("Successfully bought tokens", result!.response.txid!)
   }
 
   private async sendTokensToBuyer(buyOrderData: BuyOrderDataDto): Promise<ResponseDto<string>> {
-    const payment: Payment = {
-      TransactionType: "Payment",
-      Account: WALLET_1.address,
-      Destination: buyOrderData.userAddress,
-      Amount: {
-        currency: buyOrderData.tokenTicker,
-        issuer: WALLET_2.address,
-        value: "ToBeCalculated",
-      },
-    }
+    try {
+      const payment: Payment = {
+        TransactionType: "Payment",
+        Account: WALLET_1.address,
+        Destination: buyOrderData.userAddress,
+        Amount: {
+          currency: buyOrderData.tokenTicker,
+          issuer: WALLET_2.address,
+          value: "ToBeCalculated",
+        },
+      }
 
-    const txResponse = await this.submitTx(payment, WALLET_1)
+      await xrplClient.connect()
 
-    if (!txResponse.result.validated) {
-      return ResponseDto.ErrorResponse("The server didn't manage to send tokens to your address")
+      const txResponse = await this._submitTx(payment, WALLET_1)
+
+      await xrplClient.disconnect()
+
+      if (!txResponse.result.validated) {
+        return ResponseDto.ErrorResponse("The server didn't manage to send tokens to your address")
+      }
+      return ResponseDto.SuccessResponse(txResponse.result.hash)
+    } catch (err: any) {
+      return ResponseDto.ErrorResponse(err.toString())
     }
-    return ResponseDto.SuccessResponse(txResponse.result.hash)
   }
   /// Need to write "paybackBuyer" func that will handle reimbursements in case of sendTokensToBuyer
   // fail
