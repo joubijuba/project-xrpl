@@ -11,3 +11,14 @@ export const ApplicationDataSchema = z.object({
 })
 
 export type ApplicationDataDto = z.infer<typeof ApplicationDataSchema>
+
+export const TokenSaleDataSchema = z.object({
+  tokenTicker: z.string().min(2).max(5),
+  totalTokensForSale: z.number().int(),
+  totalTokensSold: z.number(),
+  pricePerToken: z.number(), // in XRP
+  limitPerAddress: z.number().int(), // in tokens or in XRP ?
+  onGoing: z.boolean()
+})
+
+export type TokenSaleDataDto = z.infer<typeof TokenSaleDataSchema>

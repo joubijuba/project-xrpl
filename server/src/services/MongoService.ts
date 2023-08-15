@@ -1,22 +1,22 @@
 import { Collection, Document, WithId } from "mongodb"
 import { mongoClient } from "../utils/clients"
 import { ResponseDto } from "../dtos/response.dto"
-import { ApplicationDataDto } from "../dtos/mongo-models.dto"
+import { ApplicationDataDto, TokenSaleDataDto } from "../dtos/mongo-models.dto"
 
 export default class MongoService {
-  collection: Collection
+  applicationsCollection: Collection
+  presalesCollection: Collection
 
   constructor() {
-    this.collection = mongoClient.db("mobirent").collection("subscription")
+    this.applicationsCollection = mongoClient.db("mobirent").collection("applications")
+    this.presalesCollection = mongoClient.db("mobirent").collection("presales")
   }
 
-  async addNewApplication(
-    datas: Omit<ApplicationDataDto, "status">
-  ): Promise<ResponseDto<string>> {
+  async addNewApplication(datas: Omit<ApplicationDataDto, "status">): Promise<ResponseDto<string>> {
     try {
       const exists =
-        (await this.collection.find({ mailAddress: datas.mailAddress }).toArray()) ??
-        (await this.collection.find({ phoneNumber: datas.phoneNumber }).toArray())
+        (await this.applicationsCollection.find({ mailAddress: datas.mailAddress }).toArray()) ??
+        (await this.applicationsCollection.find({ phoneNumber: datas.phoneNumber }).toArray())
       if (exists.length !== 0) {
         return ResponseDto.ErrorResponse("ERROR : EMAIL/PHONE ALREADY SUBMITTED AN APPLICATION")
       }
@@ -24,7 +24,7 @@ export default class MongoService {
         ...datas,
         status: "UNPROCESSED",
       }
-      const res = await this.collection.insertOne(newRecord)
+      const res = await this.applicationsCollection.insertOne(newRecord)
       if (res.acknowledged) {
         return ResponseDto.SuccessResponse("APPLICATION ADDED WITH SUCCESS")
       }
@@ -34,9 +34,12 @@ export default class MongoService {
     }
   }
 
-  async getPendingApplications(): Promise<ResponseDto<WithId<Document>[]>> {
+  async getPendingApplications(): Promise<ResponseDto<Document[]>> {
     try {
-      const records = await this.collection.find({ status: "UNPROCESSED" }).toArray()
+      const records = await this.applicationsCollection
+        .find({ status: "UNPROCESSED" })
+        .project({ projection: { _id: 0 } })
+        .toArray()
       if (!records.length) {
         return ResponseDto.ErrorResponse("NO PENDING APPLICATIONS")
       }
@@ -48,21 +51,23 @@ export default class MongoService {
 
   async processApplication(mailAddress: string): Promise<ResponseDto<string>> {
     try {
-      const record = await this.collection.find({ mailAddress }).toArray()
+      const record = await this.applicationsCollection.find({ mailAddress }).toArray()
       if (record.length === 0) {
         return ResponseDto.ErrorResponse(`ERROR : ${mailAddress} DOESNT EXIST`)
       }
       if (record[0].status !== "UNPROCESSED") {
         return ResponseDto.ErrorResponse(`ERROR : APPLICATION ALREADY ${record[0].status}`)
       }
-      const updatedRecord = await this.collection.updateOne(
+      const updatedRecord = await this.applicationsCollection.updateOne(
         { mailAddress },
         { $set: { status: "PROCESSED" } }
       )
       if (updatedRecord.acknowledged) {
         return ResponseDto.SuccessResponse(`${mailAddress} APPLICATION ACCEPTED`)
       }
-      return ResponseDto.ErrorResponse("ERROR : SOMETHING WENT WRONG, UNABLE TO PROCESS APPLICATION")
+      return ResponseDto.ErrorResponse(
+        "ERROR : SOMETHING WENT WRONG, UNABLE TO PROCESS APPLICATION"
+      )
     } catch (err: any) {
       return ResponseDto.ErrorResponse(`ERROR : ${err.toString()}`)
     }
@@ -70,24 +75,23 @@ export default class MongoService {
 
   async getApplication(mailAddress: string): Promise<ResponseDto<Document>> {
     try {
-      const record = await this.collection.find({ mailAddress }).toArray()
+      const record = await this.applicationsCollection.find({ mailAddress }).toArray()
       if (record.length === 0) {
         return ResponseDto.ErrorResponse(`ERROR : ${mailAddress} DOESNT EXIST`)
       }
       return ResponseDto.SuccessResponse(undefined, record)
-    }
-    catch (err: any){
+    } catch (err: any) {
       return ResponseDto.ErrorResponse(`ERROR : ${err.toString()}`)
     }
   }
 
   async deleteApplication(mailAddress: string): Promise<ResponseDto<string>> {
     try {
-      const record = await this.collection.find({ mailAddress }).toArray()
+      const record = await this.applicationsCollection.find({ mailAddress }).toArray()
       if (record.length === 0) {
         return ResponseDto.ErrorResponse(`ERROR : ${mailAddress} DOESNT EXIST`)
       }
-      const deletedRecord = await this.collection.deleteOne({ mailAddress })
+      const deletedRecord = await this.applicationsCollection.deleteOne({ mailAddress })
       if (deletedRecord.acknowledged) {
         return ResponseDto.SuccessResponse(`${mailAddress} APPLICATION DELETED WITH SUCCESS`)
       }
@@ -96,4 +100,31 @@ export default class MongoService {
       return ResponseDto.ErrorResponse(`ERROR : ${err.toString()}`)
     }
   }
+
+  async addNewTokenSale(
+    tokenSaleData: TokenSaleDataDto
+  ): Promise<ResponseDto<string>> {
+    try {
+      const exists = await this.presalesCollection
+        .find({ tokenTicker: tokenSaleData.tokenTicker, onGoing: true })
+        .toArray()
+      if (exists) {
+        return ResponseDto.ErrorResponse(
+          `THERE IS AN ONGOING PRESALE FOR ${tokenSaleData.tokenTicker}`
+        )
+      }
+      const res = await this.applicationsCollection.insertOne(tokenSaleData)
+      if (res.acknowledged) {
+        return ResponseDto.SuccessResponse(
+          `PRESALE FOR ${tokenSaleData.tokenTicker} ADDED WITH SUCCESS`
+        )
+      }
+      return ResponseDto.ErrorResponse(
+        "ERROR : SOMETHING WENT WRONG UPON ADDING THIS SALE TO THE DB"
+      )
+    } catch (err: any) {
+      return ResponseDto.ErrorResponse(err.toString())
+    }
+  }
+
 }
