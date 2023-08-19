@@ -9,6 +9,7 @@ import {
 } from "../dtos/transactions-models.dto"
 import {
   _setFetchedOnGoingPresales,
+  _setHasUserSubmittedATx,
   _setOnGoingPresales,
   fetchedOnGoingPresales,
   hasUserSubmittedATx,
@@ -77,12 +78,12 @@ export default class TransactionController {
       )
     }
 
-    /// If no more tokens to sell
+    // If no more tokens to sell
     if (totalTokensSold === totalTokensForSale) {
       return ResponseDto.ErrorResponse("THE LIMIT HAS BEEN REACHED FOR THIS PRESALE")
     }
 
-    /// Now define how much the user can buy
+    // Now define how much the user can buy
     const userAmountBought = res.data!
     if (userAmountBought === limitPerAddress) {
       return ResponseDto.ErrorResponse("YOU REACHED THE MAX CAP PER USER")
@@ -95,7 +96,7 @@ export default class TransactionController {
       _amountInXrp = limitPerAddress - userAmountBought
     }
 
-    /// Amount of tokens to be transferred to the buyer address
+    // Amount of tokens to be transferred to the buyer address
     const tokensAmount = (_amountInXrp / pricePerToken).toString()
 
     res = await this.transactionService.buyTokens({
@@ -105,7 +106,7 @@ export default class TransactionController {
     })
 
     if (res.error!) {
-      hasUserSubmittedATx.set(userAddress, false)
+      _setHasUserSubmittedATx(userAddress, false)
       return res
     }
     await this.transactionService.updateUserAmountBought(
@@ -113,7 +114,7 @@ export default class TransactionController {
       _amountInXrp + userAmountBought
     )
 
-    /// TO DO : Update onGoingPresales in order to avoid going above totalTokensForSale
+    // TO DO : Update onGoingPresales in order to avoid going above totalTokensForSale
 
     return res
   }
