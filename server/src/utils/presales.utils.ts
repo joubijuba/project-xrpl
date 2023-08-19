@@ -22,7 +22,7 @@ export const _setFetchedOnGoingPresales = (bool: boolean) => {
 /**
  * The below will help us to avoid reentrency on the "buyTokens" method
  */
-export let hasUserSubmittedATx = new Map<string, boolean>
+export let hasUserSubmittedATx = new Map<string, boolean>()
 
 export const _setHasUserSubmittedATx = (address: string, bool: boolean) => {
   hasUserSubmittedATx.set(address, bool)
