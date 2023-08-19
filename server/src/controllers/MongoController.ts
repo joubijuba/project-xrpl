@@ -2,11 +2,11 @@ import { getServer } from "../getServer"
 import { Express, Request, Response } from "express"
 import MongoService from "../services/MongoService"
 import { _responseBuilder, _reqBodyChecker } from "../utils/express.utils"
-import { _setOnGoingSales, fetchedOnGoingSales } from "../utils/sales.utils"
+import { _setOnGoingPresales, fetchedOnGoingPresales } from "../utils/presales.utils"
 import {
   ApplicationDataSchema,
-  TokenSaleDataSchema,
-  TokenSaleDataDto,
+  PresaleDataSchema,
+  PresaleDataDto,
 } from "../dtos/mongo-models.dto"
 import { ResponseDto } from "../dtos/response.dto"
 
@@ -58,7 +58,7 @@ export default class MongoController {
 
     this.expressServer.post(
       "/admin/addNewTokenSale",
-      _reqBodyChecker(TokenSaleDataSchema.omit({ onGoing: true, totalTokensSold: true })),
+      _reqBodyChecker(PresaleDataSchema.omit({ onGoing: true, totalTokensSold: true })),
       async (req: Request, res: Response) => {
         const response = await this.addNewTokenSale(req.body)
         return _responseBuilder(response, res)
@@ -67,7 +67,7 @@ export default class MongoController {
   }
 
   private async addNewTokenSale(
-    TokenSaleData: Omit<TokenSaleDataDto, "onGoing" | "totalTokensSold">
+    TokenSaleData: Omit<PresaleDataDto, "onGoing" | "totalTokensSold">
   ): Promise<ResponseDto<string>> {
     const tokenSale = {
       ...TokenSaleData,
@@ -78,8 +78,8 @@ export default class MongoController {
     if (res.error) {
       return res
     }
-    if (fetchedOnGoingSales) {
-      _setOnGoingSales([tokenSale])
+    if (fetchedOnGoingPresales) {
+      _setOnGoingPresales([tokenSale])
     }
     return res
   }

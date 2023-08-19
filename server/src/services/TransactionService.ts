@@ -10,16 +10,24 @@ import {
 import { xrplClient, xummClient } from "../utils/clients"
 import { ResponseDto } from "../dtos/response.dto"
 import { WALLET_1, WALLET_2 } from "../utils/wallet.utils"
-import { BuyOrderDataDto, TokenMintDataDto } from "../dtos/transactions-models.dto"
+import {
+  BuyOrderDataDto,
+  TokenMintDataDto,
+  UserParticipationData,
+} from "../dtos/transactions-models.dto"
 import { Collection } from "mongodb"
 import { mongoClient } from "../utils/clients"
-import { TokenSaleDataDto } from "../dtos/mongo-models.dto"
+import { PresaleDataDto } from "../dtos/mongo-models.dto"
 
 export default class TransactionService {
   presalesCollection: Collection
+  usersParticipationsCollection: Collection
 
   constructor() {
     this.presalesCollection = mongoClient.db("mobirent").collection("presales")
+    this.usersParticipationsCollection = mongoClient
+      .db("mobirent")
+      .collection("users_participations")
   }
 
   /**
@@ -49,11 +57,10 @@ export default class TransactionService {
       const txResponse = await this._submitTx(accountSet, WALLET_2)
 
       if (txResponse.result.validated) {
-        console.log("hahaha")
         return ResponseDto.SuccessResponse("SUCESSFULLY SET ISSUER ACCOUNT")
       }
 
-      return ResponseDto.ErrorResponse("TX DIDNT GO THROUGHT")
+      return ResponseDto.ErrorResponse("UNABLE TO SET ISSUER ACCOUNT")
     } catch (err: any) {
       return ResponseDto.ErrorResponse(err.toString())
     }
@@ -74,11 +81,10 @@ export default class TransactionService {
       const txResponse = await this._submitTx(hot_settings_tx, WALLET_1)
 
       if (txResponse.result.validated) {
-        console.log("hahaha")
         return ResponseDto.SuccessResponse("SUCESSFULLY SET HOT WALLET")
       }
 
-      return ResponseDto.SuccessResponse("TX DIDNT GO THROUGHT")
+      return ResponseDto.ErrorResponse("UNABLE TO SET HOT WALLET")
     } catch (err: any) {
       return ResponseDto.ErrorResponse(err.toString())
     }
@@ -101,11 +107,10 @@ export default class TransactionService {
       const txResponse = await this._submitTx(trust_set_tx, WALLET_1)
 
       if (txResponse.result.validated) {
-        console.log("hahaha")
         return ResponseDto.SuccessResponse("SUCESSFULLY SET TRUST LINE")
       }
 
-      return ResponseDto.ErrorResponse("TX DIDNT GO THROUGHT")
+      return ResponseDto.ErrorResponse("UNABLE TO SET TRUST LINE")
     } catch (err: any) {
       return ResponseDto.ErrorResponse(err.toString())
     }
@@ -131,13 +136,12 @@ export default class TransactionService {
       const txResponse = await this._submitTx(send_token_tx, WALLET_2)
 
       if (txResponse.result.validated) {
-        console.log("hahaha")
         return ResponseDto.SuccessResponse(
           `You successfully minted ${tokenMintData.tokenSupply} ${tokenMintData.tokenTicker}`
         )
       }
 
-      return ResponseDto.ErrorResponse("TX DIDNT GO THROUGHT")
+      return ResponseDto.ErrorResponse("UNABLE TO MINT TOKENS")
     } catch (err: any) {
       return ResponseDto.ErrorResponse(err.toString())
     }
@@ -215,7 +219,7 @@ export default class TransactionService {
         Amount: {
           currency: buyOrderData.tokenTicker,
           issuer: WALLET_2.address,
-          value: "ToBeCalculated",
+          value: buyOrderData.tokensAmount,
         },
       }
 
@@ -250,12 +254,12 @@ export default class TransactionService {
     )
   }
 
-  async fetchOnGoingSales(): Promise<ResponseDto<TokenSaleDataDto[]>> {
+  async fetchOnGoingPresales(): Promise<ResponseDto<PresaleDataDto[]>> {
     try {
       const records = (await this.presalesCollection
         .find({ onGoing: true })
         .project({ projection: { _id: 0 } })
-        .toArray()) as TokenSaleDataDto[]
+        .toArray()) as PresaleDataDto[]
       if (!records.length) {
         return ResponseDto.ErrorResponse("NO ONGOING PRESALE")
       }
@@ -264,6 +268,55 @@ export default class TransactionService {
       return ResponseDto.ErrorResponse(err.toString())
     }
   }
+
+  private async fetchUserParticipationData(
+    address: string
+  ): Promise<ResponseDto<UserParticipationData>> {
+    try {
+      const record = (await this.usersParticipationsCollection
+        .find({ address: address })
+        .project({ projection: { _id: 0 } })
+        .toArray()) as any[]
+      if (record.length) {
+        return ResponseDto.SuccessResponse(undefined, record[0])
+      }
+      return ResponseDto.SuccessResponse(undefined)
+    } catch (err: any) {
+      return ResponseDto.ErrorResponse("UNABLE TO FETCH USER'S DETAILS")
+    }
+  }
+
+  async getUserAmountBought(address: string): Promise<ResponseDto<number>> {
+    const res = await this.fetchUserParticipationData(address)
+    if (res && !res.error && res.data) {
+      return ResponseDto.SuccessResponse(undefined, res.data.amountBought)
+    }
+    // The below means that the user has no participation yet
+    else if (res && !res.error && !res.data){
+      return ResponseDto.SuccessResponse(undefined, 0)
+    }
+    else {
+      return ResponseDto.ErrorResponse(res.status!)
+    }
+  }
+
+  async updateUserAmountBought(address: string, amount: number): Promise<ResponseDto<string>> {
+    try {
+      const updatedRecord = await this.usersParticipationsCollection.updateOne(
+        { userAddress: address},
+        { $set: {amountBought : amount}}
+      )
+      if (updatedRecord.acknowledged){
+        return ResponseDto.SuccessResponse("SUCCESSFULLY UPDATED USER RECORD")
+      }
+      return ResponseDto.ErrorResponse("UNABLE TO UPDATE USER'S CONTRIBUTION RECORD")
+    }
+    catch (err: any){
+      return ResponseDto.ErrorResponse(`Mongo DB Error : ${err.toString()}`)
+    }
+  }
+
+  // async setUserAmountBought(address: string, amount: number): Promise<ResponseDto<string>> {}
 
   // async setSellOrder(
   //   sellOrdersInstruction: SellOrdersInstructionDto

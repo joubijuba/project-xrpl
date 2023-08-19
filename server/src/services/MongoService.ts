@@ -1,7 +1,7 @@
 import { Collection, Document, WithId } from "mongodb"
 import { mongoClient } from "../utils/clients"
 import { ResponseDto } from "../dtos/response.dto"
-import { ApplicationDataDto, TokenSaleDataDto } from "../dtos/mongo-models.dto"
+import { ApplicationDataDto, PresaleDataDto } from "../dtos/mongo-models.dto"
 
 export default class MongoService {
   applicationsCollection: Collection
@@ -102,7 +102,7 @@ export default class MongoService {
   }
 
   async addNewTokenSale(
-    tokenSaleData: TokenSaleDataDto
+    tokenSaleData: PresaleDataDto
   ): Promise<ResponseDto<string>> {
     try {
       const exists = await this.presalesCollection

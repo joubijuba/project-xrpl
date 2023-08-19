@@ -12,7 +12,7 @@ export const ApplicationDataSchema = z.object({
 
 export type ApplicationDataDto = z.infer<typeof ApplicationDataSchema>
 
-export const TokenSaleDataSchema = z.object({
+export const PresaleDataSchema = z.object({
   tokenTicker: z.string().min(2).max(5),
   totalTokensForSale: z.number().int(),
   totalTokensSold: z.number(),
@@ -21,4 +21,4 @@ export const TokenSaleDataSchema = z.object({
   onGoing: z.boolean()
 })
 
-export type TokenSaleDataDto = z.infer<typeof TokenSaleDataSchema>
+export type PresaleDataDto = z.infer<typeof PresaleDataSchema>
