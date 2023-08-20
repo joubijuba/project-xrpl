@@ -11,7 +11,7 @@ export function _reqBodyChecker(schema: z.Schema<any>) {
     const body = req.body
     const isTypeOk = schema.safeParse(body)
     if (!isTypeOk.success) {
-      return _responseBuilder(ResponseDto.ErrorResponse("Invalid body type"), res)
+      return _responseBuilder(ResponseDto.ErrorResponse("Invalid body type / datas"), res)
     }
     next()
   }

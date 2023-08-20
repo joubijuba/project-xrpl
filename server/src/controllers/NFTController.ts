@@ -18,16 +18,19 @@ export default class NFTController {
       "/mintNFT",
       _reqBodyChecker(NFTDatasSchema),
       async (req: Request, res: Response) => {
-        if (!req.files || !req.files.nftImage) {
-          return _responseBuilder(ResponseDto.ErrorResponse("No image uploaded"), res)
-        }
-        const nftDatas: NFTDatasDto = {
-          ...req.body,
-          nftImage: req.files.nftImage as UploadedFile,
-        }
-        return _responseBuilder(await this.nftService.mintNFT(nftDatas), res)
+        return await this.mintNFT(req, res)
       }
     )
   }
 
+  private async mintNFT(req: Request, res: Response): Promise<Response> {
+    if (!req.files || !req.files.nftImage) {
+      return _responseBuilder(ResponseDto.ErrorResponse("No image uploaded"), res)
+    }
+    const nftDatas: NFTDatasDto = {
+      ...req.body,
+      nftImage: req.files.nftImage as UploadedFile,
+    }
+    return _responseBuilder(await this.nftService.mintNFT(nftDatas), res)
+  }
 }

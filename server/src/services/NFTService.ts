@@ -24,7 +24,7 @@ import { WALLET_1 } from "../utils/wallet.utils"
 /* SERVICE CONTAINING ALL NFT LOGIC */
 
 export default class NFTService {
-  imageFilePath: string
+  private imageFilePath: string
 
   constructor() {
     this.imageFilePath = path.resolve(__dirname, "../assets/generated_nft.jpg")
@@ -40,17 +40,17 @@ export default class NFTService {
   }
 
   private async pinToIPFS(NFTDatas: NFTDatasDto): Promise<ResponseDto<string>> {
-    const ipfsGatewayUrl: string = "https://ipfs.io/ipfs/"
-    const { companyName, KBIS, minimumProfit, nftImage } = NFTDatas
-    const options: PinataPinOptions = {
-      pinataMetadata: {
-        name: "MobirentNFT",
-      },
-      pinataOptions: {
-        cidVersion: 0,
-      },
-    }
     try {
+      const ipfsGatewayUrl: string = "https://ipfs.io/ipfs/"
+      const { companyName, KBIS, minimumProfit, nftImage } = NFTDatas
+      const options: PinataPinOptions = {
+        pinataMetadata: {
+          name: "MobirentNFT",
+        },
+        pinataOptions: {
+          cidVersion: 0,
+        },
+      }
       const savedFileRes = await this.saveFileIntoDir(NFTDatas.nftImage)
       if (savedFileRes.error) {
         return savedFileRes
@@ -82,7 +82,7 @@ export default class NFTService {
       if (pinFileRes.error) {
         return pinFileRes
       }
-  
+
       const nftMintTxn: NFTokenMint = {
         NFTokenTaxon: 0,
         Flags: NFTokenMintFlags.tfTransferable,

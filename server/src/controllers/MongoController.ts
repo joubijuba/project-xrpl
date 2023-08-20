@@ -2,7 +2,12 @@ import { getServer } from "../getServer"
 import { Express, Request, Response } from "express"
 import MongoService from "../services/MongoService"
 import { _responseBuilder, _reqBodyChecker } from "../utils/express.utils"
-import { ApplicationDataDto, ApplicationDataSchema } from "../dtos/mongo-models.dto"
+import { _setOnGoingPresales, fetchedOnGoingPresales } from "../utils/presales.utils"
+import {
+  ApplicationDataSchema,
+  PresaleDataSchema,
+  PresaleDataDto,
+} from "../dtos/mongo-models.dto"
 import { ResponseDto } from "../dtos/response.dto"
 
 export default class MongoController {
@@ -50,5 +55,32 @@ export default class MongoController {
         return _responseBuilder(response, res)
       }
     )
+
+    this.expressServer.post(
+      "/admin/addNewTokenSale",
+      _reqBodyChecker(PresaleDataSchema.omit({ onGoing: true, totalTokensSold: true })),
+      async (req: Request, res: Response) => {
+        const response = await this.addNewPresale(req.body)
+        return _responseBuilder(response, res)
+      }
+    )
+  }
+
+  private async addNewPresale(
+    presaleData: Omit<PresaleDataDto, "onGoing" | "totalTokensSold">
+  ): Promise<ResponseDto<string>> {
+    const tokenSale = {
+      ...presaleData,
+      totalTokensSold: 0,
+      onGoing: true,
+    }
+    const res = await this.mongoService.addNewPresale(tokenSale)
+    if (res.error) {
+      return res
+    }
+    if (fetchedOnGoingPresales) {
+      _setOnGoingPresales([tokenSale])
+    }
+    return res
   }
 }
