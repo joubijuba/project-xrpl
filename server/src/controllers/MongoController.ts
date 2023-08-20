@@ -60,21 +60,21 @@ export default class MongoController {
       "/admin/addNewTokenSale",
       _reqBodyChecker(PresaleDataSchema.omit({ onGoing: true, totalTokensSold: true })),
       async (req: Request, res: Response) => {
-        const response = await this.addNewTokenSale(req.body)
+        const response = await this.addNewPresale(req.body)
         return _responseBuilder(response, res)
       }
     )
   }
 
-  private async addNewTokenSale(
-    TokenSaleData: Omit<PresaleDataDto, "onGoing" | "totalTokensSold">
+  private async addNewPresale(
+    presaleData: Omit<PresaleDataDto, "onGoing" | "totalTokensSold">
   ): Promise<ResponseDto<string>> {
     const tokenSale = {
-      ...TokenSaleData,
+      ...presaleData,
       totalTokensSold: 0,
       onGoing: true,
     }
-    const res = await this.mongoService.addNewTokenSale(tokenSale)
+    const res = await this.mongoService.addNewPresale(tokenSale)
     if (res.error) {
       return res
     }

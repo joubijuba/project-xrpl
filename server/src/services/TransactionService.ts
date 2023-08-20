@@ -13,7 +13,7 @@ import { WALLET_1, WALLET_2 } from "../utils/wallet.utils"
 import {
   BuyOrderDataDto,
   TokenMintDataDto,
-  UserParticipationData,
+  UserParticipationDataDto,
 } from "../dtos/transactions-models.dto"
 import { Collection } from "mongodb"
 import { mongoClient } from "../utils/clients"
@@ -204,7 +204,7 @@ export default class TransactionService {
 
       const result = await xummClient.payload.get(resolveData.payload_uuidv4)
 
-      return ResponseDto.SuccessResponse("Successfully bought tokens", result!.response.txid!)
+      return ResponseDto.SuccessResponse(undefined, result!.response.txid!)
     } catch (err: any) {
       return ResponseDto.ErrorResponse(err.toString())
     }
@@ -232,7 +232,7 @@ export default class TransactionService {
       if (!txResponse.result.validated) {
         return ResponseDto.ErrorResponse("The server didn't manage to send tokens to your address")
       }
-      return ResponseDto.SuccessResponse(txResponse.result.hash)
+      return ResponseDto.SuccessResponse(undefined, txResponse.result.hash)
     } catch (err: any) {
       return ResponseDto.ErrorResponse(err.toString())
     }
@@ -245,12 +245,12 @@ export default class TransactionService {
     if (res.error) {
       return res
     }
-    const res2 = await this.sendTokensToBuyer(buyOrderData)
-    if (res2.error) {
-      return res
+    const res1 = await this.sendTokensToBuyer(buyOrderData)
+    if (res1.error) {
+      return res1
     }
     return ResponseDto.SuccessResponse(
-      `You successfully bought tokens, those are your tx receipts : ${res.data}, ${res2.data}`
+      `You successfully bought tokens, those are your tx receipts : ${res.data}, ${res1.data}`
     )
   }
 
@@ -271,7 +271,7 @@ export default class TransactionService {
 
   private async fetchUserParticipationData(
     address: string
-  ): Promise<ResponseDto<UserParticipationData>> {
+  ): Promise<ResponseDto<UserParticipationDataDto>> {
     try {
       const record = (await this.usersParticipationsCollection
         .find({ address: address })
@@ -310,6 +310,19 @@ export default class TransactionService {
         return ResponseDto.SuccessResponse("SUCCESSFULLY UPDATED USER RECORD")
       }
       return ResponseDto.ErrorResponse("UNABLE TO UPDATE USER'S CONTRIBUTION RECORD")
+    }
+    catch (err: any){
+      return ResponseDto.ErrorResponse(`Mongo DB Error : ${err.toString()}`)
+    }
+  }
+
+  async initUserParticipationData(userParticipationData: UserParticipationDataDto): Promise<ResponseDto<string>> {
+    try {
+      const res = await this.usersParticipationsCollection.insertOne(userParticipationData)
+      if (res.acknowledged) {
+        return ResponseDto.SuccessResponse("USER CONTRIB. DATA ADDED WITH SUCCESS")
+      }
+      return ResponseDto.ErrorResponse("UNABLE TO ADD USER CONTRIBUTION")
     }
     catch (err: any){
       return ResponseDto.ErrorResponse(`Mongo DB Error : ${err.toString()}`)

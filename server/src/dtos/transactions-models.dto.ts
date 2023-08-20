@@ -36,7 +36,7 @@ export const BuyOrderDataSchema = z.object({
 
 export type BuyOrderDataDto = z.infer<typeof BuyOrderDataSchema>
 
-export interface UserParticipationData {
+export interface UserParticipationDataDto {
   address: string,
   amountBought: number,
   tokenTicker: string // foreign key referring to presales table

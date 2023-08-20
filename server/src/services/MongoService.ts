@@ -101,22 +101,22 @@ export default class MongoService {
     }
   }
 
-  async addNewTokenSale(
-    tokenSaleData: PresaleDataDto
+  async addNewPresale(
+    presaleData: PresaleDataDto
   ): Promise<ResponseDto<string>> {
     try {
       const exists = await this.presalesCollection
-        .find({ tokenTicker: tokenSaleData.tokenTicker, onGoing: true })
+        .find({ tokenTicker: presaleData.tokenTicker, onGoing: true })
         .toArray()
       if (exists) {
         return ResponseDto.ErrorResponse(
-          `THERE IS AN ONGOING PRESALE FOR ${tokenSaleData.tokenTicker}`
+          `THERE IS AN ONGOING PRESALE FOR ${presaleData.tokenTicker}`
         )
       }
-      const res = await this.applicationsCollection.insertOne(tokenSaleData)
+      const res = await this.applicationsCollection.insertOne(presaleData)
       if (res.acknowledged) {
         return ResponseDto.SuccessResponse(
-          `PRESALE FOR ${tokenSaleData.tokenTicker} ADDED WITH SUCCESS`
+          `PRESALE FOR ${presaleData.tokenTicker} ADDED WITH SUCCESS`
         )
       }
       return ResponseDto.ErrorResponse(

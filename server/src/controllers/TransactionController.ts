@@ -34,7 +34,7 @@ export default class TransactionController {
       }
     )
 
-    this.expressServer.get(
+    this.expressServer.post(
       "/buyTokens",
       _reqBodyChecker(BuyOrderDataSchema.omit({ tokensAmount: true })),
       async (req: Request, res: Response) => {
@@ -44,6 +44,7 @@ export default class TransactionController {
     )
   }
 
+  // Need to improve this function, it's way too long
   private async buyTokens(buyOrderData: BuyOrderDataDto): Promise<ResponseDto<string>> {
     let _amountInXrp: number
     let res: any
@@ -53,7 +54,7 @@ export default class TransactionController {
       return ResponseDto.ErrorResponse("You already submitted a transaction")
     }
     // To avoid 'reentrancy'
-    hasUserSubmittedATx.set(userAddress, true)
+    _setHasUserSubmittedATx(userAddress, true)
 
     if (!fetchedOnGoingPresales) {
       res = await this.transactionService.fetchOnGoingPresales()
@@ -66,21 +67,22 @@ export default class TransactionController {
 
     const presaleData = onGoingPresales.get(tokenTicker)
     if (!presaleData) {
+      _setHasUserSubmittedATx(userAddress, false)
       return ResponseDto.ErrorResponse("There is no ongoing presale for this token")
     }
     const { totalTokensForSale, totalTokensSold, pricePerToken, limitPerAddress } = presaleData
 
+    // If no more tokens to sell
+    if (totalTokensSold >= totalTokensForSale) {
+      return ResponseDto.ErrorResponse("THE LIMIT HAS BEEN REACHED FOR THIS PRESALE")
+    }
+
     res = await this.transactionService.getUserAmountBought(userAddress)
     if (res.error) {
-      hasUserSubmittedATx.set(userAddress, false)
+      _setHasUserSubmittedATx(userAddress, false)
       return ResponseDto.ErrorResponse(
         "UNABLE TO PROCEED THE TRANSACTION AS SERVER UNABLE TO FETCH USERS CONTRIBUTION"
       )
-    }
-
-    // If no more tokens to sell
-    if (totalTokensSold === totalTokensForSale) {
-      return ResponseDto.ErrorResponse("THE LIMIT HAS BEEN REACHED FOR THIS PRESALE")
     }
 
     // Now define how much the user can buy
@@ -99,23 +101,43 @@ export default class TransactionController {
     // Amount of tokens to be transferred to the buyer address
     const tokensAmount = (_amountInXrp / pricePerToken).toString()
 
-    res = await this.transactionService.buyTokens({
+    const purchaseRes = await this.transactionService.buyTokens({
       ...buyOrderData,
-      amountInXrp: _amountInXrp * 1000000,
+      amountInXrp: _amountInXrp * 1000000, // to drops
       tokensAmount,
     })
 
-    if (res.error!) {
+    if (purchaseRes.error) {
       _setHasUserSubmittedATx(userAddress, false)
-      return res
+      return purchaseRes
     }
-    await this.transactionService.updateUserAmountBought(
-      userAddress,
-      _amountInXrp + userAmountBought
-    )
 
-    // TO DO : Update onGoingPresales in order to avoid going above totalTokensForSale
+    /// To be improved
+    // Also need to consider the case where mongo isn't answering and we can't update users
+    // participation... could lead to buyers able to buy more than they should
+    // HOWEVER should not happen because if mongo isn't answering, the method will stop
+    // way earlier because we are calling mongo earlier in the method
 
-    return res
+    // res =
+      userAmountBought === 0
+        ? await this.transactionService.initUserParticipationData({
+            address: userAddress,
+            amountBought: _amountInXrp,
+            tokenTicker: tokenTicker,
+          })
+        : await this.transactionService.updateUserAmountBought(
+            userAddress,
+            _amountInXrp + userAmountBought
+          )
+
+    // if (res.error) {
+    //   return purchaseRes
+    // }
+
+    _setHasUserSubmittedATx(userAddress, false)
+
+    // TO DO : Update onGoingPresales.totalTokensSold in order to avoid going above totalTokensForSale
+
+    return purchaseRes
   }
 }
