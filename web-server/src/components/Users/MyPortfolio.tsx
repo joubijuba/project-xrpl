@@ -11,7 +11,11 @@ function MyPortfolio() {
     checkOwnerAddress();
   }, [checkOwnerAddress]);
 
-  return <React.Fragment>Investing page</React.Fragment>;
+  return <React.Fragment>Investing page
+    
+  </React.Fragment>
+  
+  ;
 }
 
 export default MyPortfolio;

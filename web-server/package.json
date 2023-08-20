@@ -19,7 +19,8 @@
     "react-router-dom": "^5.3.4",
     "react-scripts": "5.0.1",
     "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "xumm": "^1.5.5"
   },
   "scripts": {
     "start": "react-scripts start",
