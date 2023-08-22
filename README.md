@@ -1,6 +1,6 @@
 ### App Workflow ?
 
-![Alt text](src/assets/image.png)
+![Alt text](server/src/assets/image.png)
 
 1-2-3) An entrepreneur is looking for funding in order to set up his fleet. He will apply through
 our web-app, we will save his application into our database (mongo) and from an admin interface (to be developed)
