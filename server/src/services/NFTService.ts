@@ -74,7 +74,7 @@ export default class NFTService {
     }
   }
 
-  async mintNFT(NFTDatas: NFTDatasDto): Promise<ResponseDto<string>> {
+  async mintNFT(NFTDatas: NFTDatasDto): Promise<ResponseDto<{ tokenUri: string } | string>> {
     try {
       const pinFileRes = await this.pinToIPFS(NFTDatas)
 
@@ -97,7 +97,10 @@ export default class NFTService {
       const response = await xrplClient.submitAndWait(signed.tx_blob)
       await xrplClient.disconnect()
 
-      return ResponseDto.SuccessResponse(`SUCCESSFULLY MINTED ${response.result.hash}`)
+      return ResponseDto.SuccessResponse(
+        `SUCCESSFULLY MINTED ${response.result.hash}`, 
+        { tokenUri: pinFileRes.data as string }
+      )
     } catch (err: any) {
       return ResponseDto.ErrorResponse(err.toString())
     }

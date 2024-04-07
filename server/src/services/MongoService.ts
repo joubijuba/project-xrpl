@@ -6,10 +6,12 @@ import { ApplicationDataDto, PresaleDataDto } from "../dtos/mongo-models.dto"
 export default class MongoService {
   applicationsCollection: Collection
   presalesCollection: Collection
+  nftsCollection: Collection
 
   constructor() {
     this.applicationsCollection = mongoClient.db("mobirent").collection("applications")
     this.presalesCollection = mongoClient.db("mobirent").collection("presales")
+    this.nftsCollection = mongoClient.db("mobirent").collection("nfts")
   }
 
   async addNewApplication(datas: Omit<ApplicationDataDto, "status">): Promise<ResponseDto<string>> {
@@ -101,9 +103,23 @@ export default class MongoService {
     }
   }
 
-  async addNewPresale(
-    presaleData: PresaleDataDto
-  ): Promise<ResponseDto<string>> {
+  async addNftUri(tokenUri: string): Promise<ResponseDto<string>> {
+    try {
+      const exists = await this.applicationsCollection.find({ tokenUri }).toArray()
+      if (exists.length !== 0) {
+        return ResponseDto.ErrorResponse("ERROR : NFT ALREADY MINTED")
+      }
+      const res = await this.applicationsCollection.insertOne({ tokenUri })
+      if (res.acknowledged) {
+        return ResponseDto.SuccessResponse("NFT ADDED TO DB WITH SUCCESS")
+      }
+      return ResponseDto.ErrorResponse("ERROR : SOMETHING WENT WRONG")
+    } catch (err: any) {
+      return ResponseDto.ErrorResponse(`ERROR : ${err.toString()}`)
+    }
+  }
+
+  async addNewPresale(presaleData: PresaleDataDto): Promise<ResponseDto<string>> {
     try {
       const exists = await this.presalesCollection
         .find({ tokenTicker: presaleData.tokenTicker, onGoing: true })
@@ -126,5 +142,4 @@ export default class MongoService {
       return ResponseDto.ErrorResponse(err.toString())
     }
   }
-
 }
